@@ -112,7 +112,7 @@ class Riko_Word_Count {
         add_action("plugins_loaded", array( $this, 'load_textdomain' ) );
         add_action( 'admin_notices', array( $this, 'admin_notices' ) );
         add_filter('the_content', array( $this, 'filter_content' ) );
-
+        add_filter('the_content', array( $this, 'wc_reading_time' ) );
     }
 
     /**
@@ -140,13 +140,42 @@ class Riko_Word_Count {
      * Filter count.
      *
      * @since 1.0.0
-     * @return void
+     * @return string
      */
     public function filter_content( $content ){
         $stripped_content =strip_tags( $content );
         $wordn =str_word_count( $stripped_content );
         $label  = __('Total Number of words', 'riko-word-count');
-        $content .=printf('<h2>%s: %s</h2>', $label, $wordn);
+        //Apply Filters
+        $label =apply_filters("RWC_label", $label);
+        $tag   =apply_filters('RWC_tag', 'h2');
+
+        $content .=printf('<%s>%s: %s</%s>',$tag, $label, $wordn ,$tag);
+        return $content;
+    }
+
+    /**
+     * Reading time.
+     *
+     * @since 1.0.0
+     * @return string
+     */
+    public function wc_reading_time($content)
+    {
+        $stripped_content = strip_tags($content);
+        $wordn = str_word_count($stripped_content);
+        $reading_minute = floor($wordn / 60);
+        $reading_seconds = floor($wordn % 200 / (200 / 60));
+        $is_visible = apply_filters('RWC_is_visible', 1);
+
+        if ($is_visible) {
+            $label = __('Total Reading Time', 'riko-word-count');
+            // Apply Filters
+            $label = apply_filters("RWC_reading_time_heading", $label);
+            $tag = apply_filters('RWC_reading_time_tag', 'h1');
+
+            $content .= sprintf('<%s>%s: %d minutes %d seconds</%s>', $tag, $label, $reading_minute, $reading_seconds, $tag);
+        }
         return $content;
     }
 
